@@ -1,0 +1,26 @@
+(bloque
+  (def cero (fun () (tal-cual O)))
+  (def suc (fun (n) (cons (tal-cual S) n)))
+  (def pred cdr)
+
+  (def sumar
+    (fun (n m)
+      (si (igual? n (cero))
+        m
+        (suc (sumar (pred n) m)))))
+
+  (def multiplicar
+    (fun (n m)
+      (si (igual? n (cero))
+        (cero)
+        (sumar m (multiplicar (pred n) m)))))
+
+  (def factorial
+    (fun (n)
+      (si (igual? n (cero))
+        (suc (cero))
+        (multiplicar n (factorial (pred n))))))
+
+  (factorial
+    (suc (suc (suc (suc (cero)))))))
+salir
