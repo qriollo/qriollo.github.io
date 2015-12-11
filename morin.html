@@ -1,0 +1,146 @@
+<html>
+<head>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/SVG"],
+    tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+  });
+</script>
+<script type="text/javascript" src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG'></script>
+<script>
+
+function randrange(a, b) {
+  var r = a + Math.floor(Math.random() * (b - a));
+  if (r == a + b) { return a; }
+  return r;
+}
+
+function randchoice(list) {
+  return list[randrange(0, list.length)];
+}
+
+function globalVars() {
+  return ['{\\pi}', '{e}']
+}
+
+function morinNumber(freevars, level, side) {
+  while (true) {
+    var r = randrange(0, 3);
+    if (r == 0) {
+      return randrange(0, 10).toString();
+    } else if (r == 1) {
+      return randrange(1000000, 9999999999999999999).toString();
+    } else if (r == 2) {
+      if (side == 'rhs') {
+        return randrange(0, 10).toString() + '.' + randrange(1000000000000, 9999999999999).toString() + '...';
+      }
+    }
+  }
+}
+
+function morinConstant(freevars, level, side) {
+  var r = randrange(0, 2);
+  if (r == 0) {
+    return morinNumber(freevars, level + 1, side);
+  } else {
+    return randchoice(freevars);
+  }
+}
+
+function morinInteger(freevars, level, side) {
+  var r = randrange(0, 5);
+  if (r < 3) {
+    return morinNumber(freevars, level + 1, 'lhs');
+  } else {
+    return morinFormulaOrConstant(freevars, level + 1, 'lhs');
+  }
+}
+
+var MAX_BINLEVEL = 5;
+var MAX_UNLEVEL = 8;
+function morinFormula(freevars, level, side) {
+  if (level >= MAX_UNLEVEL) {
+    return morinConstant(freevars, level, side);
+  }
+  while (true) {
+    var r = randrange(0, 7);
+    if (r == 0) {
+      if (level < MAX_UNLEVEL) {
+        return '\\sqrt{' + morinFormulaOrConstant(freevars, level + 1, side) + '}';
+      }
+    } else if (r == 1) {
+      if (level < MAX_BINLEVEL) {
+        return morinFormulaOrConstant(freevars, level + 1, side) + ' + ' + morinFormulaOrConstant(freevars, level + 1, side);
+      }
+    } else if (r == 2) {
+      if (level < MAX_BINLEVEL) {
+        return '\\frac{' + morinFormulaOrConstant(freevars, level + 1, side) + '}{' + morinFormulaOrConstant(freevars, level, side) + '}';
+      }
+    } else if (r == 3) {
+      if (level < MAX_UNLEVEL) {
+        return morinFormulaOrConstant(freevars, level + 1, 'lhs'); + '!';
+      }
+    } else if (r == 4) {
+      if (level < MAX_UNLEVEL) {
+        var avvars = ['n','i','j','k','p','r','q','s','t','{\\ell}'];
+        if (freevars.length != avvars.length) {
+          var v = '{\\pi}';
+          while (freevars.indexOf(v) != -1) {
+            v = randchoice(avvars);
+          }
+          return '\\sum_{' + v + '=' + morinInteger(freevars, level + 1, side) + '}^{' + morinInteger(freevars, level + 1, side) + '}{' + morinFormulaOrConstant(freevars + [v], level, side) + '}';
+        }
+      }
+    } else if (r == 5) {
+      if (level < MAX_BINLEVEL) {
+        var lp = '';
+        var rp = '';
+        if (randrange(0, 2) == 0) {
+          lp = '(';
+          rp = ')';
+        }
+        return lp + morinFormulaOrConstant(freevars, level, side) + rp + '^{' + morinFormulaOrConstant(freevars, level + 1, side) + '}';
+      }
+    } else if (r == 6) {
+      if (level < MAX_BINLEVEL) {
+        return '\\sqrt[' + morinFormulaOrConstant(freevars, level + 1, side) + ']{' + morinFormulaOrConstant(freevars, level, side) + '}';
+      }
+    }
+  }
+}
+
+function morinFormulaOrConstant(freevars, level, side) {
+  var r = randrange(0, 3);
+  if (r == 0) {
+    return morinConstant(freevars, level + 1, side);
+  } else {
+    return morinFormula(freevars, level + 1, side);
+  }
+}
+
+function morinSide(freevars, level, side) {
+  if (side == 'lhs') {
+    return morinFormula(freevars, level + 1, side);
+  } else {
+    return morinFormulaOrConstant(freevars, level + 1, side);
+  }
+}
+
+function morinEquality() {
+  return morinSide(globalVars(), 1, 'lhs') + ' = ' + morinSide(globalVars(), 1, 'rhs');
+}
+
+function morin() {
+  var formula = document.getElementById('formula');
+  formula.innerHTML = '$' + morinEquality() + '$';
+  MathJax.Hub.Typeset();
+}
+</script>
+</head>
+<body>
+<input type='button' value='Morin fact!' onclick='morin()'>
+<div id="formula" style='margin:20px'>
+</div>
+</body>
+</html>
