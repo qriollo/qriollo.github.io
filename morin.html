@@ -40,11 +40,34 @@ function morinNumber(freevars, level, side) {
 }
 
 function morinConstant(freevars, level, side) {
-  var r = randrange(0, 2);
+  var r = randrange(0, 12);
+  var v = randchoice(freevars);
+
+  if (randchoice([true, false, false])) {
+    var p = randrange(2, 10);
+    if (randchoice([true, false, false])) {
+      var q = randrange(2, 10);
+      v = '{' + v + '^{' + p.toString() + '/' + q.toString() + '}}';
+    } else {
+      v = '{' + v + '^{' + p.toString() + '}}';
+    }
+  } else {
+      if (randchoice([true, false, false])) {
+        var q = randrange(2, 10);
+        v = '{' + v + '^{1/' + q.toString() + '}}';
+      }
+  }
+
   if (r == 0) {
     return morinNumber(freevars, level + 1, side);
+  } else if (r == 1) {
+    return randrange(2, 10).toString() + v;
+  } else if (r == 2) {
+    return '\\frac{' + v + '}{' + randrange(2, 10).toString() + '}';
+  } else if (r == 3) {
+    return '\\frac{' + randrange(2, 10).toString() + v + '}{' + randrange(2, 10).toString() + '}';
   } else {
-    return randchoice(freevars);
+    return v;
   }
 }
 
@@ -53,7 +76,12 @@ function morinInteger(freevars, level, side) {
   if (r < 3) {
     return morinNumber(freevars, level + 1, 'lhs');
   } else {
-    return morinFormulaOrConstant(freevars, level + 1, 'lhs');
+    while (true) {
+      var fm = morinFormulaOrConstant(freevars, level + 1, 'lhs');
+      if (fm.indexOf('{\\pi}') == -1 && fm.indexOf('{e}') == -1 && fm.indexOf('.') == -1) {
+        return fm;
+      }
+    }
   }
 }
 
@@ -79,32 +107,36 @@ function morinFormula(freevars, level, side) {
       }
     } else if (r == 3) {
       if (level < MAX_UNLEVEL) {
-        return morinFormulaOrConstant(freevars, level + 1, 'lhs'); + '!';
+        var fm = morinFormulaOrConstant(freevars, level + 1, 'lhs');
+        if (fm.indexOf('{e}') == -1 && fm.indexOf('{\\pi}') == -1) {
+          return fm + '!';
+        }
       }
     } else if (r == 4) {
       if (level < MAX_UNLEVEL) {
-        var avvars = ['n','i','j','k','p','r','q','s','t','{\\ell}'];
+        var avvars = ['n','i','j','k','p','r','q','s','t','{\\ell}', '{\\pi}', '{e}'];
         if (freevars.length != avvars.length) {
           var v = '{\\pi}';
           while (freevars.indexOf(v) != -1) {
             v = randchoice(avvars);
           }
-          return '\\sum_{' + v + '=' + morinInteger(freevars, level + 1, side) + '}^{' + morinInteger(freevars, level + 1, side) + '}{' + morinFormulaOrConstant(freevars + [v], level, side) + '}';
+          freevars.push(v);
+          var b = morinFormulaOrConstant(freevars, level, side);
+          freevars.pop();
+          return '\\sum_{' + v + '=' + morinInteger(freevars, level + 1, side) + '}^{' + morinInteger(freevars, level + 1, side) + '}{' + b + '}';
         }
       }
     } else if (r == 5) {
       if (level < MAX_BINLEVEL) {
-        var lp = '';
-        var rp = '';
-        if (randrange(0, 2) == 0) {
-          lp = '(';
-          rp = ')';
+        var fm = morinFormulaOrConstant(freevars, level, side);
+        if (fm.indexOf(' ') != -1) {
+          fm = '(' + fm + ')';
         }
-        return lp + morinFormulaOrConstant(freevars, level, side) + rp + '^{' + morinFormulaOrConstant(freevars, level + 1, side) + '}';
+        return '{' + fm + '^{' + morinFormulaOrConstant(freevars, level + 1, side) + '}' + '}';
       }
     } else if (r == 6) {
       if (level < MAX_BINLEVEL) {
-        return '\\sqrt[' + morinFormulaOrConstant(freevars, level + 1, side) + ']{' + morinFormulaOrConstant(freevars, level, side) + '}';
+        return '\\sqrt[{' + morinFormulaOrConstant(freevars, level + 1, side) + '}]{' + morinFormulaOrConstant(freevars, level, side) + '}';
       }
     }
   }
@@ -132,15 +164,21 @@ function morinEquality() {
 }
 
 function morin() {
+  var eq = morinEquality();
   var formula = document.getElementById('formula');
-  formula.innerHTML = '$' + morinEquality() + '$';
+  formula.innerHTML = '$' + eq + '$';
+  latex.innerHTML = eq;
   MathJax.Hub.Typeset();
 }
 </script>
 </head>
 <body>
 <input type='button' value='Morin fact!' onclick='morin()'>
+<p>F&oacute;rmula:</p>
 <div id="formula" style='margin:20px'>
+</div>
+<p>LaTeX:</p>
+<div id="latex" style='margin:20px'>
 </div>
 </body>
 </html>
